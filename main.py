@@ -1,44 +1,36 @@
-from data_processing.data_processor import load_dataset, text_cleaning, tfidf_vectorization
-from models.model import train_random_forest
+from data_processing.data_processor import load_dataset, text_cleaning, tfidf_vectorization, filter_dataset_by_query
+from models.model import train_random_forest, evaluate_model
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+import spacy
 import warnings
 warnings.filterwarnings("ignore")
-
+user_query = input("Enter your query: ")
 # Load dataset
 df = load_dataset('./dataset.csv')
 
+# Remove rows with missing descriptions
+df = df[df['Description'].notna()]
+
 # Data preprocessing
-df.fillna("", inplace=True)
 df['Cleaned_Description'] = df['Description'].apply(text_cleaning)
 
 # TF-IDF vectorization
 tfidf_matrix, tfidf_vectorizer = tfidf_vectorization(df['Cleaned_Description'])
 
-# Split dataset
-train_size = int(0.4 * len(df))
-val_size = int(0.02 * len(df))
-test_size = len(df) - train_size - val_size
+# Train the Random Forest model (Optional)
+# train_data = df  # Use the entire dataset for training (optional)
+# X_train = tfidf_vectorizer.transform(train_data['Cleaned_Description'])
+# label_encoder = LabelEncoder()
+# y_train = label_encoder.fit_transform(train_data['Title'])
+# random_forest_model = train_random_forest(X_train, y_train)
 
-train_data = df[:train_size]
-val_data = df[train_size:train_size + val_size]
-test_data = df[train_size + val_size:]
-X_train = tfidf_vectorizer.transform(train_data['Cleaned_Description'])
-y_train = train_data['Category']
-label_encoder = LabelEncoder()
-y_train_encoded = label_encoder.fit_transform(y_train)
+# Process user query
+filtered_df = filter_dataset_by_query(df, user_query)
+recommended_books = filtered_df['Title'].tolist()
 
-# Train the Random Forest model
-random_forest_model = train_random_forest(X_train, y_train_encoded)
-print("Training the Random Forest model...")
-
-# Encode validation labels using the same label encoder used for training
-label_encoder_val = LabelEncoder()
-label_encoder_val.classes_ = label_encoder.classes_  # Ensure consistency with training labels
-y_val_encoded = label_encoder_val.transform(val_data['Category'])
-
-# Evaluate the model
-X_val = tfidf_vectorizer.transform(val_data['Cleaned_Description'])
-y_val_encoded = label_encoder.transform(val_data['Category'])
-accuracy = evaluate_model(model, X_val, y_val_encoded)
-print("Validation accuracy:", accuracy)
+number_of_books = len(recommended_books)
+print("Number of books:", number_of_books)
+print("Recommended books:")
+for book in recommended_books:
+    print(book)
