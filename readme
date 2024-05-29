@@ -1,3 +1,5 @@
+This project was made to translate Portuguese Natural Language to SQL queries. For any other language please update the translator function.
+
 1- Install requirements.txt (This project is running on python 3.12.3) 
  run
 `pip install -r requirements.txt`
