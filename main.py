@@ -12,8 +12,9 @@ translator = Translator()
 
 # Load the best model checkpoint
 best_model_checkpoint = './output/checkpoint-42'
-tokenizer = BartTokenizer.from_pretrained(best_model_checkpoint)
-model = BartForConditionalGeneration.from_pretrained(best_model_checkpoint)
+trained_model='./trained_model'
+tokenizer = BartTokenizer.from_pretrained(trained_model)
+model = BartForConditionalGeneration.from_pretrained(trained_model)
 
 # Check if GPU is available and move model to GPU if it is
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -35,7 +36,7 @@ def generate_sql_query(question):
     generated_sql_query = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
     return generated_sql_query.strip()
 
-@app.post("/generate-sql/")
+@app.post("/generate-query")
 def generate_sql(request: QueryRequest):
     try:
         # Translate the question

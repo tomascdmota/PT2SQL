@@ -1,0 +1,35 @@
+1- Install requirements.txt (This project is running on python 3.12.3) 
+ run
+`pip install -r requirements.txt`
+
+2- Model spechs:
+    'Eval_loss': 0.020717764273285866,
+    'eval_accuracy': 0.98828125,
+    'eval_f1': 0.9868629092261906,
+    'eval_precision': 0.9977539062499999, 
+    'eval_recall': 0.98828125,
+
+# Training model with your own dataset
+Tip: Use the fine_tune.py
+(This Model is based of the BART model.)
+Change from my default dataset "train.csv" to yours, on line 80.
+
+# Starting the project 
+`uvicorn main:app --reload`
+
+# Requests
+To get the query make a post request to /generate-query
+ Example (using http for localhost):
+  `http://127.0.0.1:8000/generate-query`
+
+It is currently only accepting one parameter (question) in portuguese to be translate to english. This translations is skipped if it's already in english
+
+# Example
+  `    {
+  "question": "Mostre me todos os livros de Jane Austen desde 1980"
+}`
+`
+{
+    "generated_sql": "SELECT Jane Austen books FROM table WHERE Year = 1980"
+}
+`

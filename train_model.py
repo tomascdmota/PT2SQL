@@ -13,7 +13,7 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 translator = Translator()
 
 # Initialize the NL2SQL pipeline
-model_name = "SwastikM/bart-large-nl2sql"
+#model_name = "SwastikM/bart-large-nl2sql"
 pre_trained_model_dir = './trained_model'
 tokenizer = BartTokenizer.from_pretrained(model_name)
 model = BartForConditionalGeneration.from_pretrained(model_name)
@@ -99,6 +99,8 @@ if len(train_data) == 0 or len(val_data) == 0:
 
 # Function to preprocess the data
 def preprocess_data(data):
+    # Translate questions to English
+    data['question'] = data['question'].apply(translate_question)
     inputs = tokenizer(data['question'].tolist(), max_length=512, truncation=True, padding='max_length', return_tensors="pt")
     with tokenizer.as_target_tokenizer():
         labels = tokenizer(data['sql'].tolist(), max_length=512, truncation=True, padding='max_length', return_tensors="pt")
@@ -125,8 +127,8 @@ if not os.path.exists(output_dir):
 # Define training arguments
 training_args = TrainingArguments(
     output_dir=output_dir,
-    per_device_train_batch_size=4,
-    per_device_eval_batch_size=4,
+    per_device_train_batch_size=3,
+    per_device_eval_batch_size=3,
     eval_strategy="epoch",
     logging_dir="./logs",
     save_total_limit=5,

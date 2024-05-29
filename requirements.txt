@@ -4,3 +4,8 @@ transformers
 torch
 googletrans
 pandas
+pydantic
+numpy
+detect
+Dataset
+sklearn
