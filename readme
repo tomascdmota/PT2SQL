@@ -32,6 +32,6 @@ It is currently only accepting one parameter (question) in portuguese to be tran
 }`
 `
 {
-    "generated_sql": "SELECT Jane Austen books FROM table WHERE Year = 1980"
+    "generated_sql": "SELECT Jane Austen FROM books WHERE Year = 1980"
 }
 `
