@@ -3,7 +3,7 @@
 `pip install -r requirements.txt`
 
 2- Model spechs:
-    'Eval_loss': 0.020717764273285866,
+    'eval_loss': 0.008920986205339432,
     'eval_accuracy': 0.98828125,
     'eval_f1': 0.9868629092261906,
     'eval_precision': 0.9977539062499999, 
