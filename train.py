@@ -30,7 +30,15 @@ class MyDataset(Dataset):
         source_text, target_text = self.data[idx]
         source_inputs = tokenizer(source_text, return_tensors="pt", padding="max_length", truncation=True, max_length=50)
         target_inputs = tokenizer(target_text, return_tensors="pt", padding="max_length", truncation=True, max_length=50)
+        # Squeeze to ensure dimensions are [seq_length]
+        source_inputs = {key: value.squeeze(0) for key, value in source_inputs.items()}
+        target_inputs = {key: value.squeeze(0) for key, value in target_inputs.items()}
         return source_inputs, target_inputs
+
+def collate_fn(batch):
+    source_inputs = {key: torch.stack([item[0][key] for item in batch]) for key in batch[0][0].keys()}
+    target_inputs = {key: torch.stack([item[1][key] for item in batch]) for key in batch[0][1].keys()}
+    return source_inputs, target_inputs
 
 # Define training function
 def train_epoch(model, optimizer, dataloader, device):
@@ -38,33 +46,39 @@ def train_epoch(model, optimizer, dataloader, device):
     total_loss = 0
     for batch in dataloader:
         optimizer.zero_grad()
+        
         source_inputs, target_inputs = batch
         source_inputs = {key: value.to(device) for key, value in source_inputs.items()}
         target_inputs = {key: value.to(device) for key, value in target_inputs.items()}
         
-        # Access input_ids from target_inputs
+        input_ids = source_inputs["input_ids"]
+        attention_mask = source_inputs.get("attention_mask")
         labels = target_inputs["input_ids"]
         
-        # Ensure attention mask has correct shape
-        attention_mask = target_inputs.get("attention_mask", None)
+        # Ensure correct dimensions
+        assert input_ids.dim() == 2, f"Expected input_ids to be 2D, got {input_ids.dim()}D"
         if attention_mask is not None:
-            attention_mask = attention_mask.float()  # Ensure it's a float tensor
-            attention_mask = attention_mask.to(device)
+            assert attention_mask.dim() == 2, f"Expected attention_mask to be 2D, got {attention_mask.dim()}D"
+        assert labels.dim() == 2, f"Expected labels to be 2D, got {labels.dim()}D"
         
-        outputs = model(**source_inputs, labels=labels, attention_mask=attention_mask)
+        # Forward pass
+        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
         loss = outputs.loss
         total_loss += loss.item()
+        
+        # Backward pass
         loss.backward()
         optimizer.step()
+    
     return total_loss / len(dataloader)
 
 # Prepare data
 dataset = MyDataset('nl_marc.csv')
-train_loader = DataLoader(dataset, batch_size=8, shuffle=True)
+train_loader = DataLoader(dataset, batch_size=8, shuffle=True, collate_fn=collate_fn)
 
 # Define optimizer and training parameters
 optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
-num_epochs = 5
+num_epochs = 3
 
 # Fine-tuning loop
 for epoch in range(num_epochs):
@@ -79,9 +93,8 @@ tokenizer.save_pretrained("fine_tuned_bart_model")
 def generate_marc_from_queries(queries, model, tokenizer, device):
     marc_records = []
     for query in queries:
-        input_ids = tokenizer(query, return_tensors="pt", padding=True, truncation=True).input_ids.to(device)
-        attention_mask = tokenizer(query, return_tensors="pt", padding=True, truncation=True).attention_mask.to(device)
-        outputs = model(input_ids, attention_mask=attention_mask)
+        inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True).to(device)
+        outputs = model.generate(**inputs)
         decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
         marc_records.append(decoded_output)
     return marc_records
